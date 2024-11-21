@@ -69,12 +69,10 @@
         this.load.image('paddlePowerUp', 'paddlePowerUp.png');
         this.load.image('ballPowerUp', 'ballPowerUp.png');
         this.load.image('starfield', 'starfield.png');
-        this.load.audio('bounce', 'bounce.wav');
-        this.load.audio('powerup', 'powerup.wav');
     }
 
     function create() {
-        this.background = this.add.tileSprite(400, 300, 800, 600, 'starfield');
+        this.add.tileSprite(400, 300, 800, 600, 'starfield');
 
         paddle = this.physics.add.sprite(400, 550, 'paddle').setImmovable();
         paddle.body.allowGravity = false;
@@ -99,10 +97,8 @@
 
         powerUps = this.physics.add.group();
 
-        scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#FFF' })
-            .setShadow(2, 2, "#333333", 2, true, true);
-        livesText = this.add.text(650, 16, 'Lives: 3', { fontSize: '32px', fill: '#FFF' })
-            .setShadow(2, 2, "#333333", 2, true, true);
+        scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#FFF' });
+        livesText = this.add.text(650, 16, 'Lives: 3', { fontSize: '32px', fill: '#FFF' });
 
         this.physics.add.collider(ball, paddle, hitPaddle, null, this);
         this.physics.add.collider(ball, bricks, hitBrick, null, this);
@@ -114,8 +110,6 @@
     }
 
     function update() {
-        this.background.tilePositionY -= 0.5;
-
         if (ball.y > 600) {
             lives--;
             livesText.setText('Lives: ' + lives);
@@ -163,7 +157,6 @@
     }
 
     function hitPaddle(ball, paddle) {
-        this.sound.play('bounce');
         var diff = 0;
 
         if (ball.x < paddle.x) {
@@ -178,7 +171,6 @@
     }
 
     function collectPowerUp(paddle, powerUp) {
-        this.sound.play('powerup');
         if (powerUp.texture.key === 'paddlePowerUp') {
             paddle.setScale(1.5, 1);
             this.time.delayedCall(5000, function() {
