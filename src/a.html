@@ -18,13 +18,33 @@
             cursor: pointer;
             border-radius: 5px;
         }
+        #usernameInput {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px;
+            font-size: 16px;
+        }
+        #scoresContainer {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            display: none; /* Initially hide the scores container */
+        }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
 </head>
 <body>
 
+<input type="text" id="usernameInput" placeholder="Enter Username">
 <button id="startButton">Start Game</button>
+<div id="scoresContainer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
 <script>
     var config = {
         type: Phaser.AUTO,
@@ -53,11 +73,19 @@
     var lives = 3;
     var livesText;
     var startButton = document.getElementById("startButton");
+    var usernameInput = document.getElementById("usernameInput"); // 获取用户名输入框
     var powerUps;
 
     startButton.addEventListener("click", function() {
-        startButton.style.display = "none";
-        game = new Phaser.Game(config);
+        if (usernameInput.value.trim()) {
+            startButton.style.display = "none";
+            var username = usernameInput.value.trim();
+            game = new Phaser.Game(config);
+            // 保存用户名和分数
+            saveScore(username);
+        } else {
+            alert("Please enter a username.");
+        }
     });
 
     function preload() {
@@ -116,7 +144,7 @@
             if (lives === 0) {
                 this.physics.pause();
                 alert('Game Over');
-                location.reload();
+                endGame();
             } else {
                 ball.setPosition(400, 500);
                 ball.setVelocity(150, -150);
@@ -152,7 +180,7 @@
 
         if (bricks.countActive() === 0) {
             alert('You Win!');
-            location.reload();
+            endGame();
         }
     }
 
@@ -179,12 +207,81 @@
         } else if (powerUp.texture.key === 'ballPowerUp') {
             ball.setScale(1.5, 1.5);
             this.time.delayedCall(5000, function() {
-                ball.setScale(1, 1);
+                ball.setScale(1,1);
+                    powerUp.disableBody(true, true);
             });
-        }
-        powerUp.disableBody(true, true);
+    }}
+
+    function endGame() {
+        // 保存分数
+        fetch('http://127.0.0.1:5000/players', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username: usernameInput.value }) // 使用实际输入的用户名
+        })
+        .then(response => response.json())
+        .then(player => {
+            return fetch('http://127.0.0.1:5000/scores', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ player_id: player.id, score: score })
+            });
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Score saved:', data);
+            loadScores();
+            startButton.style.display = "block"; // 游戏结束后重新显示开始按钮
+        })
+        .catch(error => console.error('Error:', error));
     }
+
+    function loadScores() {
+        fetch('http://127.0.0.1:5000/scores') // 获取所有分数
+            .then(response => response.json())
+            .then(data => {
+                const scoresContainer = document.getElementById('scoresContainer');
+                scoresContainer.innerHTML = '<h3>Score History:</h3>';
+                data.forEach(score => {
+                    scoresContainer.innerHTML += `<p>${score.game_date}: ${score.score}</p>`;
+                });
+                scoresContainer.style.display = 'block'; // 显示分数容器
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function saveScore(username) {
+    fetch('http://127.0.0.1:5000/players', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: username })
+    })
+    .then(response => response.json())
+    .then(player => {
+        return fetch('http://127.0.0.1:5000/scores', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ player_id: player.id, score: score })
+        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Score saved:', data);
+        loadScores();
+        startButton.style.display = "block"; // 游戏结束后重新显示开始按钮
+    })
+    .catch(error => console.error('Error:', error));
+}
 </script>
 
 </body>
 </html>
+
